@@ -405,14 +405,16 @@ SideTabList.prototype = {
   },
   async moveTabToBottom(tab) {
     let sameCategoryTabs = await browser.tabs.query({
-      pinned: tab.pinned
+      pinned: tab.pinned,
+      windowId: this.windowId
     });
     let lastIndex = sameCategoryTabs[sameCategoryTabs.length - 1].index;
     await browser.tabs.move(tab.id, { index: lastIndex + 1 });
   },
   async moveTabToTop(tab) {
     let sameCategoryTabs = await browser.tabs.query({
-      pinned: tab.pinned
+      pinned: tab.pinned,
+      windowId: this.windowId
     });
     let lastIndex = sameCategoryTabs[0].index;
     await browser.tabs.move(tab.id, { index: lastIndex });
@@ -648,7 +650,11 @@ SideTabList.prototype = {
   setIcon(tab) {
     let sidetab = this.getTab(tab);
     if (sidetab) {
-      sidetab.updateIcon(tab.favIconUrl);
+      if (tab.favIconUrl) {
+        sidetab.updateIcon(tab.favIconUrl);
+      } else {
+        sidetab.resetIcon();
+      }
     }
   },
   setLoading(tab, isLoading) {
@@ -720,7 +726,7 @@ SideTabList.prototype = {
 
 // Remove case and accents/diacritics.
 function normalizeStr(str) {
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
 }
 
 module.exports = SideTabList;

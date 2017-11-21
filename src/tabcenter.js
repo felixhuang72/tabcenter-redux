@@ -18,8 +18,13 @@ TabCenter.prototype = {
     this._searchBoxInput = document.getElementById("searchbox-input");
     this.setupLabels();
     await this.sideTabList.init();
-    const data = await browser.windows.getCurrent();
-    await this.sideTabList.populate(data.id);
+    const {id: windowId} = await browser.windows.getCurrent();
+    this.windowId = windowId;
+    browser.runtime.sendMessage({
+      event: "sidebar-open",
+      windowId
+    });
+    await this.sideTabList.populate(windowId);
     this.setupListeners();
     browser.runtime.getPlatformInfo().then((platform) => {
       document.body.setAttribute("platform", platform.os);
@@ -40,11 +45,6 @@ TabCenter.prototype = {
     this._searchBoxInput.addEventListener("blur", () => {
       searchbox.classList.remove("focused");
       this._newTabLabelView.classList.remove("hidden");
-    });
-    browser.commands.onCommand.addListener((command) => {
-      if (command == "focus-searchbox") {
-        this._searchBoxInput.focus();
-      }
     });
     this._newTabButtonView.addEventListener("click", () => {
       if (!this._newTabMenuShown) {
@@ -78,6 +78,12 @@ TabCenter.prototype = {
     });
     window.addEventListener("blur", () => {
       this.hideNewTabMenu();
+    });
+    window.addEventListener("beforeunload", () => {
+      browser.runtime.sendMessage({
+        event: "sidebar-closed",
+        windowId: this.windowId
+      });
     });
     browser.storage.onChanged.addListener(changes => {
       if (changes.darkTheme) {

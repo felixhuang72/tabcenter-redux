@@ -108,6 +108,7 @@ SideTab.prototype = {
     toggleClass(this.view, "active", active);
     if (active) {
       this._notselectedsinceload = false;
+      this.view.removeAttribute("notselectedsinceload");
     }
   },
   scrollIntoView() {
@@ -140,8 +141,11 @@ SideTab.prototype = {
     const imgTest = document.createElement("img");
     imgTest.src = favIconUrl;
     imgTest.onerror = () => {
-      this._iconView.style.backgroundImage = "";
+      this.resetIcon();
     };
+  },
+  resetIcon() {
+    this._iconView.style.backgroundImage = "";
   },
   setLoading(isLoading) {
     toggleClass(this.view, "loading", isLoading);
@@ -232,6 +236,9 @@ Object.assign(SideTab, {
   _syncThrobberAnimations() {
     // Home-made BrowserUtils.promiseLayoutFlushed
     requestAnimationFrame(() => {
+      if (!document.body.getAnimations) { // this API is available only in Nightly so far
+        return;
+      }
       setTimeout(() => {
         const animations = [...document.querySelectorAll(".tab.loading .tab-icon")]
           .map(tabIcon => tabIcon.getAnimations({ subtree: true }))
